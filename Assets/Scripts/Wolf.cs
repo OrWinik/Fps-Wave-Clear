@@ -1,49 +1,74 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
+using UnityEngine.UI;
+using UnityEngine.AI;
 
 public class Wolf : MonoBehaviour
 {
     public GameObject player;
-    public float speed = 10f;
+    public NavMeshAgent navMesh;
     public float hp = 50;
-    public TextMeshProUGUI hpText;
+    private float maxHP = 50;
     public Animator animator;
+    public Image hpImage;
+    public Animator anim;
+    public Animation dead;
 
-    // Start is called before the first frame update
     void Start()
     {
-        player = GameObject.Find("MainPlayer");
-
+        player = GameObject.FindGameObjectWithTag("Player");
+        anim = GetComponent<Animator>();
     }
 
-    // Update is called once per frame
     void Update()
     {
-        Vector3 direction = player.transform.position - transform.position;
-        direction.Normalize();
-        transform.position += Time.deltaTime * speed * direction;
-        transform.LookAt(player.transform);
+        navMesh.destination = player.transform.position;
 
-        if (hp<=0)
-        {
-            Destroy(this.gameObject);
-        }
+        Death();
 
-        hpText.text = hp.ToString();
+        hpImage.fillAmount = hp / maxHP;
+
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if(collision.collider.name == "Bullet(Clone)")
+        if(collision.collider.tag == "Bullet")
         {
             hp -= 25;
         }
 
-        if (collision.collider.name == "MainPlayer")
+        if (collision.collider.tag == "Player")
         {
-            Destroy(this.gameObject);
+            anim.SetBool("attack01", true);
+            Invoke("DamagePlayer", 1);
+            gameObject.GetComponent<NavMeshAgent>().velocity = Vector3.zero;
         }
+    }
+
+    public void Death()
+    {
+        if (hp <= 0)
+        {
+            gameObject.GetComponent<NavMeshAgent>().velocity = Vector3.zero;
+            anim.SetBool("dead" , true);
+            Invoke("DestroyTheObject", 1);
+        }
+    }
+
+    public void TakeDamage(float damage)
+    {
+        hp -= damage;
+    }
+
+    public void DestroyTheObject()
+    {
+        player.GetComponent<Player>().PlayerScore(1);
+        Destroy(this.gameObject);
+    }
+
+    public void DamagePlayer()
+    {
+        player.GetComponent<Player>().ChangeHp(35);
     }
 }

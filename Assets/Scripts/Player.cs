@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
@@ -20,14 +21,27 @@ public class Player : MonoBehaviour
     //Life
     public float hpRecoverCooldown = 10;
     private int hpRecovery = 10;
-    public int hp = 100;
+    public float hp = 100;
+    private float maxHP = 100;
     public TextMeshProUGUI hpText;
+    public Image HPimage;
 
     //Losing
     public GameObject LoseMenu;
-    
 
-    // Update is called once per frame
+    //score
+    public int score = 0;
+    public TextMeshProUGUI scoreText;
+    public Crystal crystal;
+
+    public void Awake()
+    {
+        LoseMenu.SetActive(false);
+        Time.timeScale = 1;
+        Cursor.lockState = CursorLockMode.Locked;
+        crystal = FindObjectOfType<Crystal>();
+    }
+
     void Update()
     {
         touchingGround = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
@@ -50,9 +64,6 @@ public class Player : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
-
-        hpText.text = hp.ToString();
-
         if(hp <= 90)
         {
             hpRecoverCooldown -= Time.deltaTime;
@@ -60,20 +71,34 @@ public class Player : MonoBehaviour
             {
                 hp += hpRecovery;
                 hpRecoverCooldown = 10;
+                UpdateHP();
             }
         }
 
         Lose();
 
-    }
-
-    void OnCollisionEnter(Collision collision)
-    {
-        if(collision.collider.name == "wolf_02_Mecanim(Clone)")
+        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.A))
         {
-            hp -= 50;
+            FindObjectOfType<AudioManager>().Play("Walk");
+        }
+        else if(Horizontal == 0 && Vertical==0)
+        {
+            FindObjectOfType<AudioManager>().Pause("Walk");
         }
 
+        scoreText.text = score.ToString();
+    }
+
+    public void ChangeHp(float DamageTaken)
+    {
+        hp = hp - DamageTaken;
+        FindObjectOfType<AudioManager>().Play("PlayerHit");
+        UpdateHP();
+    }
+
+    public void UpdateHP()
+    {
+        HPimage.fillAmount = hp / maxHP;
     }
 
     public void Lose()
@@ -81,9 +106,15 @@ public class Player : MonoBehaviour
         if(hp<=0)
         {
             LoseMenu.SetActive(true);
+            Cursor.lockState = CursorLockMode.None;
             Time.timeScale = 0;
-
+            crystal.GetComponent<Crystal>().SaveHighScore(score);
         }
+    }
+
+    public void PlayerScore(int addedScore)
+    {
+        score += addedScore;
     }
 
 }

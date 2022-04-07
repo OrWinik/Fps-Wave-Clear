@@ -5,23 +5,32 @@ using TMPro;
 
 public class Crystal : MonoBehaviour
 {
+    public Player player;
+    public int playerHighScore;
     public int hp = 500;
     public TextMeshProUGUI HpText;
     private float hpRecoveyCooldown = 10;
     public GameObject loseMenu;
+    public GameObject warningText;
+    public float WarningCoolDown = 3f;
+    public Animator warningTextAnim;
 
-    // Start is called before the first frame update
-    void Start()
+    public void Start()
     {
-        
+        player = FindObjectOfType<Player>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         HpText.text = hp.ToString();
 
         Lose();
+
+        WarningCoolDown -= Time.deltaTime;
+        if(WarningCoolDown <= 0)
+        {
+            warningText.SetActive(false);
+        }
     }
 
 
@@ -29,13 +38,13 @@ public class Crystal : MonoBehaviour
     {
         if(collision.collider.name == "goblin_01_Mecanim(Clone)")
         {
-            hp -= 50;
+            TakeDamage(50);
             Debug.Log(collision);
         }
 
         if (collision.collider.name == "Hobgoblin_002_Mecanim(Clone)")
         {
-            hp -= 100;
+            TakeDamage(100);
             Debug.Log(collision);
         }
 
@@ -54,8 +63,32 @@ public class Crystal : MonoBehaviour
     {
         if(hp <= 0)
         {
-            loseMenu.SetActive(true);
+            Cursor.lockState = CursorLockMode.None;
             Time.timeScale = 0;
+            loseMenu.SetActive(true);
+            playerHighScore = player.GetComponent<Player>().score;
+            SaveHighScore(playerHighScore);
+        }
+    }
+
+    public void TakeDamage(int damageAmount)
+    {
+        hp -= damageAmount;
+        WarningCoolDown = 3f;
+        Warning();
+    }
+
+    public void Warning()
+    {
+        warningText.SetActive(true);
+        warningTextAnim.SetTrigger("CrystalHit");
+    }
+
+    public void SaveHighScore(int highScore)
+    {
+        if (highScore > PlayerPrefs.GetInt("HighScore", 0))
+        {
+            PlayerPrefs.SetInt("HighScore", highScore);
         }
     }
 }

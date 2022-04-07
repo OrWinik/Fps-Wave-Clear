@@ -1,51 +1,68 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
-
+using UnityEngine.UI;
+using UnityEngine.AI;
 
 public class Goblin_1 : MonoBehaviour
 {
     public GameObject crystal;
-    public float speed = 10f;
-    public float hp = 100;
-    public TextMeshProUGUI hpText;
+    public GameObject player;
+    public NavMeshAgent navMesh;
+    public float hp = 50;
+    private float maxHP = 50;
     public Animator animator;
+    public Image hpImage;
 
-    // Start is called before the first frame update
     void Start()
     {
-        crystal = GameObject.Find("Crystal");
+        crystal = GameObject.FindGameObjectWithTag("Crystal");
+        player = GameObject.FindGameObjectWithTag("Player");
     }
 
-    // Update is called once per frame
     void Update()
     {
-        Vector3 direction = crystal.transform.position - transform.position;
-        direction.Normalize();
-        transform.position += Time.deltaTime * speed * direction;
-        transform.LookAt(crystal.transform);
+        navMesh.destination = crystal.transform.position;
 
-        if (hp <= 0)
-        {
-            Destroy(this.gameObject);
-        }
+        Death();
 
-        hpText.text = hp.ToString();
+        hpImage.fillAmount = hp / maxHP;
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.collider.name == "Bullet(Clone)")
-        {
-            hp -= 25;
-            
-        }
 
-        if (collision.collider.name == "Crystal")
+        if (collision.collider.tag == "Crystal")
         {
-            speed = 0;
             Destroy(this.gameObject);
         }
+        if (collision.collider.tag == "Player")
+        {
+            player.GetComponent<Player>().ChangeHp(20);
+            Death();
+        }
+    }
+
+    public void TakeDamage(float damage)
+    {
+        hp -= damage;
+    }
+
+
+    public void Death()
+    {
+        if (hp <= 0)
+        {
+            gameObject.GetComponent<NavMeshAgent>().velocity = Vector3.zero;
+            animator.SetBool("dead", true);
+            Invoke("DestroyTheObject", 1.5f);
+        }
+    }
+
+
+    public void DestroyTheObject()
+    {
+        player.GetComponent<Player>().PlayerScore(1);
+        Destroy(this.gameObject);
     }
 }
